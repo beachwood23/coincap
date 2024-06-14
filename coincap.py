@@ -1,32 +1,35 @@
 import requests
 import json
+import os
 
+API_ADDRESS = 'https://api.coingecko.com/api/v3/simple/price?'
+API_REQUEST_HEADER = {'accept': 'application/json'}
+PORTFOLIO_FILE = "coincap_portfolio.json"
 
 def f2usd( value ):
     return f'${value:,.2f}'.replace('$-', '-$')
 
-# todo: use config file instead of hardcoded values
 # further todo: ask questions to set up config file, no direct user set up for config file
 # further todo: use sqlite db and cli for updating coin values, no config files necessary
-held_coins = {
-    'bitcoin': 0.1,
-    'ethereum': 0.1,
-    'bitcoin-cash': 0.1,
-    'dogecoin': 1,
-    }
+# Using JSON here, to minimize the libraries used. Already using JSON to parse the API request.
+if os.path.exists(PORTFOLIO_FILE):
+    with open(PORTFOLIO_FILE, "r") as f:
+        held_coins = json.load(f)
+# held_coins = {
+#     'bitcoin': 0.1,
+#     'ethereum': 0.1,
+#     'bitcoin-cash': 0.1,
+#     'dogecoin': 1,
+#     }
 
 held_coins_usd = {}
-
-api_address = 'https://api.coingecko.com/api/v3/simple/price?'
-request_header = {'accept': 'application/json'}
-
 
 # format of API call as of Feb 29, 2024:
 # GET 'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin%2Cethereum&vs_currencies=usd'
 coin_ids = ','.join(held_coins.keys())
 
 # make single request for all coin prices
-resp = requests.get(api_address + 'ids=' + coin_ids + '&vs_currencies=usd', headers=request_header)
+resp = requests.get(API_ADDRESS + 'ids=' + coin_ids + '&vs_currencies=usd', headers=API_REQUEST_HEADER)
 
 if (resp.status_code == 200):
     resp_json = json.loads(resp.text)
