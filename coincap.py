@@ -5,7 +5,9 @@ import json
 def f2usd( value ):
     return f'${value:,.2f}'.replace('$-', '-$')
 
-
+# todo: use config file instead of hardcoded values
+# further todo: ask questions to set up config file, no direct user set up for config file
+# further todo: use sqlite db and cli for updating coin values, no config files necessary
 held_coins = {
     'bitcoin': 0.1,
     'ethereum': 0.1,
@@ -13,15 +15,12 @@ held_coins = {
     'dogecoin': 1,
     }
 
-CONFIG_FILE = "coincap_config.json"
-
 held_coins_usd = {}
 
 api_address = 'https://api.coingecko.com/api/v3/simple/price?'
 request_header = {'accept': 'application/json'}
 
 
-# we want to make a single API call here, instead of one for each coin
 # format of API call as of Feb 29, 2024:
 # GET 'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin%2Cethereum&vs_currencies=usd'
 coin_ids = ','.join(held_coins.keys())
@@ -31,9 +30,6 @@ resp = requests.get(api_address + 'ids=' + coin_ids + '&vs_currencies=usd', head
 
 if (resp.status_code == 200):
     resp_json = json.loads(resp.text)
-    # print(resp_json)
-    # held_coins_usd[coin] = float(resp_json['ticker']['price']) * held_coins[coin]
-    # print(coin + ': ' + f2usd(float(resp_json['ticker']['price'])) + ' -> ' + f2usd(held_coins_usd[coin]))
 else:
     print(resp.text)
 
@@ -44,20 +40,6 @@ for coin, currency_price in resp_json.items():
         held_coins_usd[coin] = price * held_coins[coin]
     else:
         print("Multiple currency pairs found")
-
-# old loop
-# for coin in held_coins.keys():
-#     # api_format = api_address + coin
-#     resp = requests.get(api_address + 'ids=' + coin_ids + '&vs_currencies=usd', headers=request_header)
-#     print(resp)
-#     if (resp.status_code == 200):
-#         resp_json = json.loads(resp.text)
-#         print(resp_json)
-#         # held_coins_usd[coin] = float(resp_json['ticker']['price']) * held_coins[coin]
-#         # print(coin + ': ' + f2usd(float(resp_json['ticker']['price'])) + ' -> ' + f2usd(held_coins_usd[coin]))
-#     else:
-#         print(resp.text)
-
 
 total_coin_values = 0
 for coin in held_coins_usd.keys():
