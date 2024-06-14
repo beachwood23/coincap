@@ -15,12 +15,9 @@ def f2usd( value ):
 if os.path.exists(PORTFOLIO_FILE):
     with open(PORTFOLIO_FILE, "r") as f:
         held_coins = json.load(f)
-# held_coins = {
-#     'bitcoin': 0.1,
-#     'ethereum': 0.1,
-#     'bitcoin-cash': 0.1,
-#     'dogecoin': 1,
-#     }
+
+# todo: validate held_coins against possible coins in API
+# https://pro-api.coingecko.com/api/v3/coins/list returns json of all possible coins
 
 held_coins_usd = {}
 
@@ -29,6 +26,7 @@ held_coins_usd = {}
 coin_ids = ','.join(held_coins.keys())
 
 # make single request for all coin prices
+
 resp = requests.get(API_ADDRESS + 'ids=' + coin_ids + '&vs_currencies=usd', headers=API_REQUEST_HEADER)
 
 if (resp.status_code == 200):
