@@ -16,22 +16,26 @@ def read_portfolio():
     return held_coins
 
 def create_portfolio():
-    # todo: ask questions to set up config file, no direct user set up for config file
+    # todo: interactive autocomplete for coin names
     # further todo: use sqlite db and cli for updating coin values, no config files necessary
     # further todo: using some charm.sh fun to jazz things up, or perhaps python-rich
 
     held_coins = {}
+    print("""
+    We see you don't have a portfolio created yet. Let's help you make one.
+    Enter your coins in the full name like "bitcoin", "ethereum", "bitcoin-cash", etc.
+    """)
     while True:
         coin = input("Enter a cryptocoin you want to track, or press Enter to finish): ").strip()
         if not coin:
             break
-        value = int(input("Enter number of coins held for '{coin}': ").strip())
+        value = int(input(f"Enter number of coins held for {coin}: ").strip())
         held_coins[coin] = value
 
 
     with open(PORTFOLIO_FILE, "w") as f:
         json.dump(held_coins, f, indent=2)
-        print("Data saved to '{PORTFOLIO_FILE}'.")
+        print(f"Data saved to {PORTFOLIO_FILE}.")
 
     return held_coins
 
@@ -62,6 +66,7 @@ def print_portfolio(held_coins):
             print("Multiple currency pairs found")
 
     total_coin_values = 0
+    print("~~~~~ coin capitalization ~~~~~")
     for coin in held_coins_usd.keys():
 
         # round floating price to nearest cent
