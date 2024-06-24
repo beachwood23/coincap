@@ -57,8 +57,11 @@ def create_portfolio():
     Use TAB to autocomplete coin names.
     """)
 
+    ## todo: Fill up these coins with the full list of possible working coins
     completer = AutoCompleter(['bitcoin', 'ethereum', 'litecoin'])
     readline.set_completer(completer.complete)
+
+    ## todo: enter the correct mode for completion based on OS
     # Ensure we are in the correct mode for completion
     # readline.parse_and_bind('tab: complete') # works for linux and windows
     readline.parse_and_bind('bind ^I rl_complete') # works for Mac
