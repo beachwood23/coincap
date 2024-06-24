@@ -1,13 +1,40 @@
 import requests
 import json
 import os
+import readline
+import logging
 
 API_ADDRESS = 'https://api.coingecko.com/api/v3/simple/price?'
 API_REQUEST_HEADER = {'accept': 'application/json'}
 # PORTFOLIO_FILE = "coincap_portfolio.json"
 PORTFOLIO_FILE = "test_coincap_portfolio.json"
 
+LOG_FILENAME = './coincap.log'
+logging.basicConfig(filename=LOG_FILENAME,
+                    level=logging.DEBUG,
+                    )
+
+class AutoCompleter:
+    def __init__(self, options):
+        self.options = sorted(options)
+        self.matches = []
+
+    def complete(self, text, state):
+        # When state is 0, it means it's a new completion session, so we need to compute the matches
+        if state == 0:
+            if text:  # If there's already some text, match it
+                self.matches = [s for s in self.options if s.startswith(text)]
+            else:  # If no text, list all options
+                self.matches = self.options[:]
+        # Return the state-th match
+        try:
+            return self.matches[state]
+        except IndexError:
+            return None
+
+
 def read_portfolio():
+    """Attempts to read from the PORTFOLIO_FILE. Returns values if it exists."""
     held_coins = {}
     if os.path.exists(PORTFOLIO_FILE):
         with open(PORTFOLIO_FILE, "r") as f:
@@ -16,22 +43,37 @@ def read_portfolio():
     return held_coins
 
 def create_portfolio():
+    """Creates portfolio file. Assumes we have already checked if it exists."""
     # todo: interactive autocomplete for coin names
-    # further todo: use sqlite db and cli for updating coin values, no config files necessary
+    # Can borrow some type of functionality from https://github.com/darrenburns/textual-autocomplete
+    # This takes an array of DropDownItems, like strings, that then autocompletes.
     # further todo: using some charm.sh fun to jazz things up, or perhaps python-rich
+    # further todo: use sqlite db and cli for updating coin values, no config files necessary
 
     held_coins = {}
     print("""
     We see you don't have a portfolio created yet. Let's help you make one.
     Enter your coins in the full name like "bitcoin", "ethereum", "bitcoin-cash", etc.
+    Use TAB to autocomplete coin names.
     """)
-    while True:
-        coin = input("Enter a cryptocoin you want to track, or press Enter to finish): ").strip()
-        if not coin:
-            break
-        value = int(input(f"Enter number of coins held for {coin}: ").strip())
-        held_coins[coin] = value
 
+    completer = AutoCompleter(['bitcoin', 'ethereum', 'litecoin'])
+    readline.set_completer(completer.complete)
+    # Ensure we are in the correct mode for completion
+    # readline.parse_and_bind('tab: complete') # works for linux and windows
+    readline.parse_and_bind('bind ^I rl_complete') # works for Mac
+    # readline.parse_and_bind('set editing-mode emacs')
+
+    while True:
+        try:
+            coin = input("Enter a cryptocoin you want to track, or press Enter to finish): ").strip()
+            if not coin:
+                break
+            value = int(input(f"Enter number of coins held for {coin}: ").strip())
+            held_coins[coin] = value
+        except (EOFError, KeyboardInterrupt):
+            print("\nExiting.")
+            break
 
     with open(PORTFOLIO_FILE, "w") as f:
         json.dump(held_coins, f, indent=2)
@@ -40,8 +82,10 @@ def create_portfolio():
     return held_coins
 
 def print_portfolio(held_coins):
+    """Prints the value of the held_coins"""
     # todo: validate held_coins against possible coins in API
     # https://pro-api.coingecko.com/api/v3/coins/list returns json of all possible coins
+    # could combine comparing this list with autocomplete in coin entry?
 
     held_coins_usd = {}
 
