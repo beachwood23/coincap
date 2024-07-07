@@ -86,12 +86,14 @@ def create_portfolio():
     readline.parse_and_bind('bind ^I rl_complete') # works for Mac
     # readline.parse_and_bind('set editing-mode emacs')
 
+
+    # todo: fix bug in autocomplete for hyphenated coins like 'bitcoin-cash'
     while True:
         try:
             coin = input("Enter a cryptocoin you want to track, or press Enter to finish): ").strip()
             if not coin:
                 break
-            value = int(input(f"Enter number of coins held for {coin}: ").strip())
+            value = float(input(f"Enter number of coins held for {coin}: ").strip())
             held_coins[coin] = value
         except (EOFError, KeyboardInterrupt):
             print("\nExiting.")
