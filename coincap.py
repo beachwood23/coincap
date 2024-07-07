@@ -4,10 +4,9 @@ import os
 import readline
 import logging
 
-API_ADDRESS = 'https://api.coingecko.com/api/v3/simple/price?'
+API_ADDRESS = 'https://api.coingecko.com/api/v3/'
 API_REQUEST_HEADER = {'accept': 'application/json'}
-# PORTFOLIO_FILE = "coincap_portfolio.json"
-PORTFOLIO_FILE = "test_coincap_portfolio.json"
+PORTFOLIO_FILE = "coincap_portfolio.json"
 
 LOG_FILENAME = './coincap.log'
 logging.basicConfig(filename=LOG_FILENAME,
@@ -32,6 +31,22 @@ class AutoCompleter:
         except IndexError:
             return None
 
+def populate_possible_coins():
+    """Attempts to populate a json map of all possible coins that can be tracked."""
+    possible_coins = []
+
+    # Source: https://docs.coingecko.com/v3.0.1/reference/coins-markets
+    resp = requests.get(API_ADDRESS + 'coins/markets?vs_currency=usd&order=market_cap_desc', headers=API_REQUEST_HEADER)
+
+    if (resp.status_code == 200):
+        resp_json = json.loads(resp.text)
+    else:
+        print(resp.text)
+
+    for coin in resp_json:
+        possible_coins.append(coin['id'])
+
+    return possible_coins
 
 def read_portfolio():
     """Attempts to read from the PORTFOLIO_FILE. Returns values if it exists."""
@@ -52,13 +67,17 @@ def create_portfolio():
 
     held_coins = {}
     print("""
-    We see you don't have a portfolio created yet. Let's help you make one.
+    We see you don't have a portfolio created yet. Let's help you make one 🤠
+
     Enter your coins in the full name like "bitcoin", "ethereum", "bitcoin-cash", etc.
-    Use TAB to autocomplete coin names.
+    If the coin is in the top 100 by market cap, use TAB to autocomplete coin names.
+    
+    Other coins can be tracked, if they have a price on https://www.coingecko.com.
     """)
 
     ## todo: Fill up these coins with the full list of possible working coins
-    completer = AutoCompleter(['bitcoin', 'ethereum', 'litecoin'])
+    possible_coins = populate_possible_coins()
+    completer = AutoCompleter(possible_coins)
     readline.set_completer(completer.complete)
 
     ## todo: enter the correct mode for completion based on OS
@@ -85,7 +104,7 @@ def create_portfolio():
     return held_coins
 
 def print_portfolio(held_coins):
-    """Prints the value of the held_coins"""
+    """Prints the value of the held_coins."""
     # todo: validate held_coins against possible coins in API
     # https://pro-api.coingecko.com/api/v3/coins/list returns json of all possible coins
     # could combine comparing this list with autocomplete in coin entry?
@@ -97,7 +116,7 @@ def print_portfolio(held_coins):
     coin_ids = ','.join(held_coins.keys())
 
     # make single request for all coin prices
-    resp = requests.get(API_ADDRESS + 'ids=' + coin_ids + '&vs_currencies=usd', headers=API_REQUEST_HEADER)
+    resp = requests.get(API_ADDRESS + 'simple/price?' + 'ids=' + coin_ids + '&vs_currencies=usd', headers=API_REQUEST_HEADER)
 
     if (resp.status_code == 200):
         resp_json = json.loads(resp.text)
@@ -106,11 +125,14 @@ def print_portfolio(held_coins):
 
     for coin, currency_price in resp_json.items():
         # we assume there is only one currency price in the response
-        if len(currency_price) == 1:
-            currency, price = next(iter(currency_price.items()))
-            held_coins_usd[coin] = price * held_coins[coin]
-        else:
-            print("Multiple currency pairs found")
+        currency, price = [(x, y) for x, y in currency_price.items()][0]
+        held_coins_usd[coin] = price * held_coins[coin]
+
+        # if len(currency_price) == 1:
+        #     currency, price = next(iter(currency_price.items()))
+        #     held_coins_usd[coin] = price * held_coins[coin]
+        # else:
+        #     print("Multiple currency pairs found")
 
     total_coin_values = 0
     print("~~~~~ coin capitalization ~~~~~")
