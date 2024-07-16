@@ -1,28 +1,34 @@
-import requests
+import argparse
 import json
+import logging
 import os
 import readline
-import logging
-import argparse
 from typing import Dict, List
 
-API_ADDRESS = 'https://api.coingecko.com/api/v3/'
-API_REQUEST_HEADER = {'accept': 'application/json'}
+import requests
+
+API_ADDRESS = "https://api.coingecko.com/api/v3/"
+API_REQUEST_HEADER = {"accept": "application/json"}
 PORTFOLIO_FILE = "coincap_portfolio.json"
 
-LOG_FILENAME = './coincap.log'
-logging.basicConfig(filename=LOG_FILENAME,
-                    level=logging.DEBUG,
-                    )
+LOG_FILENAME = "./coincap.log"
+logging.basicConfig(
+    filename=LOG_FILENAME,
+    level=logging.DEBUG,
+)
+
 
 def set_args() -> argparse.ArgumentParser:
-    arg_parser = argparse.ArgumentParser(description='A simple tracker of your cryptocurrency portfolio.')
+    arg_parser = argparse.ArgumentParser(
+        description="A simple tracker of your cryptocurrency portfolio."
+    )
 
     arg_parser.add_argument(
-        '--clean',
-        help='Sets up a clean portfolio file. Removes your existing portfolio file.',
+        "--clean",
+        help="Sets up a clean portfolio file. Removes your existing portfolio file.",
         required=False,
-        action="store_true")
+        action="store_true",
+    )
     # todo: add 'force' flag, and confirmation option
     # arg_parser.add_argument(
     #     '-f',
@@ -31,6 +37,7 @@ def set_args() -> argparse.ArgumentParser:
     #     required=False)
 
     return arg_parser
+
 
 class AutoCompleter:
     def __init__(self, options):
@@ -50,28 +57,34 @@ class AutoCompleter:
         except IndexError:
             return None
 
+
 def populate_possible_coins() -> List[str]:
     """Attempts to populate a json map of all possible coins that can be tracked."""
     possible_coins = []
 
     # Source: https://docs.coingecko.com/v3.0.1/reference/coins-markets
-    resp = requests.get(API_ADDRESS + 'coins/markets?vs_currency=usd&order=market_cap_desc', headers=API_REQUEST_HEADER)
+    resp = requests.get(
+        API_ADDRESS + "coins/markets?vs_currency=usd&order=market_cap_desc",
+        headers=API_REQUEST_HEADER,
+    )
 
-    if (resp.status_code == 200):
+    if resp.status_code == 200:
         resp_json = json.loads(resp.text)
     else:
         print(resp.text)
 
     for coin in resp_json:
-        possible_coins.append(coin['id'])
+        possible_coins.append(coin["id"])
 
     return possible_coins
+
 
 def remove_portfolio():
     """Deletes the existing portfolio at PORTFOLIO_FILE"""
     if os.path.exists(PORTFOLIO_FILE):
-        print(f'Cleaning the existing portfolio file at {PORTFOLIO_FILE}...')
+        print(f"Cleaning the existing portfolio file at {PORTFOLIO_FILE}...")
         os.remove(PORTFOLIO_FILE)
+
 
 def read_portfolio() -> Dict[str, float]:
     """Attempts to read from the PORTFOLIO_FILE. Returns values if it exists."""
@@ -81,6 +94,7 @@ def read_portfolio() -> Dict[str, float]:
             held_coins = json.load(f)
 
     return held_coins
+
 
 def create_portfolio() -> Dict[str, float]:
     """Creates portfolio file. Assumes we have already checked if it exists."""
@@ -108,12 +122,14 @@ def create_portfolio() -> Dict[str, float]:
     ## todo: enter the correct mode for completion based on OS
     # Ensure we are in the correct mode for completion
     # readline.parse_and_bind('tab: complete') # works for linux and windows
-    readline.parse_and_bind('bind ^I rl_complete') # works for Mac
+    readline.parse_and_bind("bind ^I rl_complete")  # works for Mac
 
     # todo: fix bug in autocomplete for hyphenated coins like 'bitcoin-cash'
     while True:
         try:
-            coin = input("Enter a cryptocoin you want to track, or press Enter to finish): ").strip()
+            coin = input(
+                "Enter a cryptocoin you want to track, or press Enter to finish): "
+            ).strip()
             if not coin:
                 break
             value = float(input(f"Enter number of coins held for {coin}: ").strip())
@@ -128,6 +144,7 @@ def create_portfolio() -> Dict[str, float]:
 
     return held_coins
 
+
 def print_portfolio(held_coins):
     """Prints the value of the held_coins."""
     # todo: validate held_coins against possible coins in API
@@ -138,12 +155,15 @@ def print_portfolio(held_coins):
 
     # format of API call as of Feb 29, 2024:
     # GET 'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin%2Cethereum&vs_currencies=usd'
-    coin_ids = ','.join(held_coins.keys())
+    coin_ids = ",".join(held_coins.keys())
 
     # make single request for all coin prices
-    resp = requests.get(API_ADDRESS + 'simple/price?' + 'ids=' + coin_ids + '&vs_currencies=usd', headers=API_REQUEST_HEADER)
+    resp = requests.get(
+        API_ADDRESS + "simple/price?" + "ids=" + coin_ids + "&vs_currencies=usd",
+        headers=API_REQUEST_HEADER,
+    )
 
-    if (resp.status_code == 200):
+    if resp.status_code == 200:
         resp_json = json.loads(resp.text)
     else:
         print(resp.text)
@@ -162,14 +182,14 @@ def print_portfolio(held_coins):
     total_coin_values = 0
     print("~~~~~ coin capitalization ~~~~~")
     for coin in held_coins_usd.keys():
-
         # round floating price to nearest cent
-        usd_value = f'${held_coins_usd[coin]:,.2f}'.replace('$-', '-$')
+        usd_value = f"${held_coins_usd[coin]:,.2f}".replace("$-", "-$")
         print(f"{coin}\n\t{usd_value}")
 
         total_coin_values += held_coins_usd[coin]
 
-    print(f'Total coin value in USD: ${total_coin_values:,.2f}'.replace('$-', '-$'))
+    print(f"Total coin value in USD: ${total_coin_values:,.2f}".replace("$-", "-$"))
+
 
 def main():
     # Sets user arguments, then calls the class method to parse.
@@ -178,7 +198,7 @@ def main():
     if args.clean:
         remove_portfolio()
 
-    held_coins = read_portfolio() # first try to get from stored param file
+    held_coins = read_portfolio()  # first try to get from stored param file
 
     if not held_coins:
         # we need to build json portfolio file
@@ -189,5 +209,7 @@ def main():
 
     print_portfolio(held_coins)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()
+    # todo: add pyproject.toml
