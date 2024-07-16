@@ -7,11 +7,11 @@ from typing import Dict, List
 
 import requests
 
-API_ADDRESS = "https://api.coingecko.com/api/v3/"
-API_REQUEST_HEADER = {"accept": "application/json"}
-PORTFOLIO_FILE = "coincap_portfolio.json"
+API_ADDRESS = 'https://api.coingecko.com/api/v3/'
+API_REQUEST_HEADER = {'accept': 'application/json'}
+PORTFOLIO_FILE = 'coincap_portfolio.json'
 
-LOG_FILENAME = "./coincap.log"
+LOG_FILENAME = './coincap.log'
 logging.basicConfig(
     filename=LOG_FILENAME,
     level=logging.DEBUG,
@@ -20,14 +20,14 @@ logging.basicConfig(
 
 def set_args() -> argparse.ArgumentParser:
     arg_parser = argparse.ArgumentParser(
-        description="A simple tracker of your cryptocurrency portfolio."
+        description='A simple tracker of your cryptocurrency portfolio.'
     )
 
     arg_parser.add_argument(
-        "--clean",
-        help="Sets up a clean portfolio file. Removes your existing portfolio file.",
+        '--clean',
+        help='Sets up a clean portfolio file. Removes your existing portfolio file.',
         required=False,
-        action="store_true",
+        action='store_true',
     )
     # todo: add 'force' flag, and confirmation option
     # arg_parser.add_argument(
@@ -64,7 +64,7 @@ def populate_possible_coins() -> List[str]:
 
     # Source: https://docs.coingecko.com/v3.0.1/reference/coins-markets
     resp = requests.get(
-        API_ADDRESS + "coins/markets?vs_currency=usd&order=market_cap_desc",
+        API_ADDRESS + 'coins/markets?vs_currency=usd&order=market_cap_desc',
         headers=API_REQUEST_HEADER,
     )
 
@@ -74,7 +74,7 @@ def populate_possible_coins() -> List[str]:
         print(resp.text)
 
     for coin in resp_json:
-        possible_coins.append(coin["id"])
+        possible_coins.append(coin['id'])
 
     return possible_coins
 
@@ -82,7 +82,7 @@ def populate_possible_coins() -> List[str]:
 def remove_portfolio():
     """Deletes the existing portfolio at PORTFOLIO_FILE"""
     if os.path.exists(PORTFOLIO_FILE):
-        print(f"Cleaning the existing portfolio file at {PORTFOLIO_FILE}...")
+        print(f'Cleaning the existing portfolio file at {PORTFOLIO_FILE}...')
         os.remove(PORTFOLIO_FILE)
 
 
@@ -90,7 +90,7 @@ def read_portfolio() -> Dict[str, float]:
     """Attempts to read from the PORTFOLIO_FILE. Returns values if it exists."""
     held_coins = {}
     if os.path.exists(PORTFOLIO_FILE):
-        with open(PORTFOLIO_FILE, "r") as f:
+        with open(PORTFOLIO_FILE, 'r') as f:
             held_coins = json.load(f)
 
     return held_coins
@@ -122,25 +122,25 @@ def create_portfolio() -> Dict[str, float]:
     ## todo: enter the correct mode for completion based on OS
     # Ensure we are in the correct mode for completion
     # readline.parse_and_bind('tab: complete') # works for linux and windows
-    readline.parse_and_bind("bind ^I rl_complete")  # works for Mac
+    readline.parse_and_bind('bind ^I rl_complete')  # works for Mac
 
     # todo: fix bug in autocomplete for hyphenated coins like 'bitcoin-cash'
     while True:
         try:
             coin = input(
-                "Enter a cryptocoin you want to track, or press Enter to finish): "
+                'Enter a cryptocoin you want to track, or press Enter to finish): '
             ).strip()
             if not coin:
                 break
-            value = float(input(f"Enter number of coins held for {coin}: ").strip())
+            value = float(input(f'Enter number of coins held for {coin}: ').strip())
             held_coins[coin] = value
         except (EOFError, KeyboardInterrupt):
-            print("\nExiting.")
+            print('\nExiting.')
             break
 
-    with open(PORTFOLIO_FILE, "w") as f:
+    with open(PORTFOLIO_FILE, 'w') as f:
         json.dump(held_coins, f, indent=2)
-        print(f"Data saved to {PORTFOLIO_FILE}.")
+        print(f'Data saved to {PORTFOLIO_FILE}.')
 
     return held_coins
 
@@ -155,11 +155,11 @@ def print_portfolio(held_coins):
 
     # format of API call as of Feb 29, 2024:
     # GET 'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin%2Cethereum&vs_currencies=usd'
-    coin_ids = ",".join(held_coins.keys())
+    coin_ids = ','.join(held_coins.keys())
 
     # make single request for all coin prices
     resp = requests.get(
-        API_ADDRESS + "simple/price?" + "ids=" + coin_ids + "&vs_currencies=usd",
+        API_ADDRESS + 'simple/price?' + 'ids=' + coin_ids + '&vs_currencies=usd',
         headers=API_REQUEST_HEADER,
     )
 
@@ -180,15 +180,15 @@ def print_portfolio(held_coins):
         #     print("Multiple currency pairs found")
 
     total_coin_values = 0
-    print("~~~~~ coin capitalization ~~~~~")
+    print('~~~~~ coin capitalization ~~~~~')
     for coin in held_coins_usd.keys():
         # round floating price to nearest cent
-        usd_value = f"${held_coins_usd[coin]:,.2f}".replace("$-", "-$")
-        print(f"{coin}\n\t{usd_value}")
+        usd_value = f'${held_coins_usd[coin]:,.2f}'.replace('$-', '-$')
+        print(f'{coin}\n\t{usd_value}')
 
         total_coin_values += held_coins_usd[coin]
 
-    print(f"Total coin value in USD: ${total_coin_values:,.2f}".replace("$-", "-$"))
+    print(f'Total coin value in USD: ${total_coin_values:,.2f}'.replace('$-', '-$'))
 
 
 def main():
@@ -210,6 +210,5 @@ def main():
     print_portfolio(held_coins)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
-    # todo: add pyproject.toml
