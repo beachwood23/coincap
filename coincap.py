@@ -3,6 +3,8 @@ import json
 import os
 import readline
 import logging
+import argparse
+from typing import Dict, List
 
 API_ADDRESS = 'https://api.coingecko.com/api/v3/'
 API_REQUEST_HEADER = {'accept': 'application/json'}
@@ -13,12 +15,29 @@ logging.basicConfig(filename=LOG_FILENAME,
                     level=logging.DEBUG,
                     )
 
+def set_args() -> argparse.ArgumentParser:
+    arg_parser = argparse.ArgumentParser(description='A simple tracker of your cryptocurrency portfolio.')
+
+    arg_parser.add_argument(
+        '--clean',
+        help='Sets up a clean portfolio file. Removes your existing portfolio file.',
+        required=False,
+        action="store_true")
+    # todo: add 'force' flag, and confirmation option
+    # arg_parser.add_argument(
+    #     '-f',
+    #     '--force',
+    #     help='Skips the confirmation prompt before cleaning portfolio file.',
+    #     required=False)
+
+    return arg_parser
+
 class AutoCompleter:
     def __init__(self, options):
         self.options = sorted(options)
         self.matches = []
 
-    def complete(self, text, state):
+    def complete(self, text, state) -> str:
         # When state is 0, it means it's a new completion session, so we need to compute the matches
         if state == 0:
             if text:  # If there's already some text, match it
@@ -31,7 +50,7 @@ class AutoCompleter:
         except IndexError:
             return None
 
-def populate_possible_coins():
+def populate_possible_coins() -> List[str]:
     """Attempts to populate a json map of all possible coins that can be tracked."""
     possible_coins = []
 
@@ -48,7 +67,13 @@ def populate_possible_coins():
 
     return possible_coins
 
-def read_portfolio():
+def remove_portfolio():
+    """Deletes the existing portfolio at PORTFOLIO_FILE"""
+    if os.path.exists(PORTFOLIO_FILE):
+        print(f'Cleaning the existing portfolio file at {PORTFOLIO_FILE}...')
+        os.remove(PORTFOLIO_FILE)
+
+def read_portfolio() -> Dict[str, float]:
     """Attempts to read from the PORTFOLIO_FILE. Returns values if it exists."""
     held_coins = {}
     if os.path.exists(PORTFOLIO_FILE):
@@ -57,7 +82,7 @@ def read_portfolio():
 
     return held_coins
 
-def create_portfolio():
+def create_portfolio() -> Dict[str, float]:
     """Creates portfolio file. Assumes we have already checked if it exists."""
     # todo: interactive autocomplete for coin names
     # Can borrow some type of functionality from https://github.com/darrenburns/textual-autocomplete
@@ -71,7 +96,7 @@ def create_portfolio():
 
     Enter your coins in the full name like "bitcoin", "ethereum", "bitcoin-cash", etc.
     If the coin is in the top 100 by market cap, use TAB to autocomplete coin names.
-    
+
     Other coins can be tracked, if they have a price on https://www.coingecko.com.
     """)
 
@@ -84,8 +109,6 @@ def create_portfolio():
     # Ensure we are in the correct mode for completion
     # readline.parse_and_bind('tab: complete') # works for linux and windows
     readline.parse_and_bind('bind ^I rl_complete') # works for Mac
-    # readline.parse_and_bind('set editing-mode emacs')
-
 
     # todo: fix bug in autocomplete for hyphenated coins like 'bitcoin-cash'
     while True:
@@ -148,11 +171,23 @@ def print_portfolio(held_coins):
 
     print(f'Total coin value in USD: ${total_coin_values:,.2f}'.replace('$-', '-$'))
 
-if __name__ == '__main__':
+def main():
+    # Sets user arguments, then calls the class method to parse.
+    args = set_args().parse_args()
+
+    if args.clean:
+        remove_portfolio()
 
     held_coins = read_portfolio() # first try to get from stored param file
+
     if not held_coins:
         # we need to build json portfolio file
         held_coins = create_portfolio()
+    elif args.clean:
+        remove_portfolio()
+        held_coins = create_portfolio()
 
     print_portfolio(held_coins)
+
+if __name__ == '__main__':
+    main()
