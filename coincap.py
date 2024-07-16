@@ -55,7 +55,7 @@ class AutoCompleter:
         try:
             return self.matches[state]
         except IndexError:
-            return None
+            return ""
 
 
 def populate_possible_coins() -> List[str]:
@@ -68,6 +68,7 @@ def populate_possible_coins() -> List[str]:
         headers=API_REQUEST_HEADER,
     )
 
+    resp_json = {}
     if resp.status_code == 200:
         resp_json = json.loads(resp.text)
     else:
@@ -163,6 +164,7 @@ def print_portfolio(held_coins):
         headers=API_REQUEST_HEADER,
     )
 
+    resp_json = {}
     if resp.status_code == 200:
         resp_json = json.loads(resp.text)
     else:
