@@ -1,2 +1,21 @@
+[project]
+name = "coincap"
+version = "0.1.0"
+description = "A simple tracker of your cryptocurrency portfolio"
+readme = "README.md"
+authors = [{name = "Ryan White"}]
+requires-python = ">=3.9"
+dependencies = [
+    "logging>=0.4.9.6",
+    "requests>=2.32.3",
+    "ruff>=0.8.1",
+]
+
+[project.urls]
+Homepage = "https://github.com/beachwood23/coincap"
+Changelog = "https://github.com/beachwood23/coincap/releases"
+Issues = "https://github.com/beachwood23/coincap/issues"
+CI = "https://github.com/beachwood23/coincap/actions"
+
 [tool.ruff.format]
 quote-style = "single"

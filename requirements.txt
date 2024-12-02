@@ -1,5 +1,0 @@
-requests
-json
-os
-readline
-logging
